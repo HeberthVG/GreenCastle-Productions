@@ -10,13 +10,15 @@
 #include "msp.h"
 #include "Task.hpp"
 
-#define NUMBER_OF_SLOTS 255
-#define NULL            0
+#define NUMBER_OF_SLOTS       255
+#define NULL                  0
 #define MESAGGES_BUFFER_SPACE 1536
-#define FREE                  -1
+#define FREE                  0xFFFFFFFF
 // - This structure defines the Task Information
 struct st_TaskInfo {
 	Task * pToAttach; // - Pointer to the Task
+	bool bTriggered;
+	uint8_t u8ID;
 	uint64_t u64TickInterval; // - How often the task is executed
 	uint64_t u64ticks; // - Current tick count
 	uint64_t u64TickIntervalInitValue; // - Value to reset
@@ -31,12 +33,12 @@ class Scheduler
 public:
     Scheduler();
     uint64_t m_u64ticks;
-    int m_iMessageBuffer [MESAGGES_BUFFER_SPACE];
+    uint32_t m_u32MessageBuffer [MESAGGES_BUFFER_SPACE];
     uint16_t m_u16BufferPosition; //- Pointer to free space in message buffer
     uint8_t attach(Task * i_ToAttach, bool i_bTriggered=false, uint64_t i_u64TickInterval = 0);
     uint8_t run(void);
     uint8_t setup(void);
-    void RunTask(int l_iTaskSlot, Task * l_pTask);
+    void CheckMessagesBuffer(void);
     uint8_t InitMessageBuffer(void);
 private:
     uint16_t m_u16Counter;

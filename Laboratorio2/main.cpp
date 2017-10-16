@@ -20,11 +20,15 @@ void main(void)
     // - Instantiate two new Tasks
     LED BlueLED(BIT2);
     LED GreenLED(BIT1);
+    LED RedLED(BIT0);
     // - Run the overall setup function for the system
     Setup();
     // - Attach the Tasks to the Scheduler;
-    g_MainScheduler.attach(&BlueLED,false, 500);
-    g_MainScheduler.attach(&GreenLED,false, 300);
+    g_MainScheduler.attach(&BlueLED,false,500);
+    //g_MainScheduler.attach(&GreenLED,false,500);
+    //g_MainScheduler.attach(&RedLED,false,500);
+    g_MainScheduler.attach(&GreenLED,true,NULL);
+    g_MainScheduler.attach(&RedLED,true,NULL);
     // - Run the Setup for the scheduler and all tasks
     g_MainScheduler.setup();
     // - Main Loop
@@ -33,6 +37,13 @@ void main(void)
     	__wfe(); // Wait for Event
         if(g_SystemTicks != g_MainScheduler.m_u64ticks)
         {
+            //Trigger Green LED every 300ms
+            if(g_SystemTicks%300==0){
+                GreenLED.SendMessage(0,1);
+            }
+            if(g_SystemTicks%800==0){
+                GreenLED.SendMessage(0,2);
+            }
             //- Only execute the tasks if one tick has passed.
             g_MainScheduler.m_u64ticks = g_SystemTicks;
             g_MainScheduler.run();
