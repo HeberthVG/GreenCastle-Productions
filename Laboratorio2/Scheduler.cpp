@@ -87,6 +87,10 @@ uint8_t Scheduler::run(void)
     	l_pNextTask = static_cast<Task *> (m_aSchedule[l_iNextTaskSlot].pToAttach);
 		if(l_pNextTask != ((uintptr_t) 0))
 		{
+		    if(m_aSchedule[l_iNextTaskSlot].bMessage == true) {
+		        g_pToData = m_aSchedule[l_iNextTaskSlot].pToData;
+		        m_aSchedule[l_iNextTaskSlot].bMessage = false;
+		    }
 		    if (m_aSchedule[l_iNextTaskSlot].bTriggered == true){
 		        if(m_aSchedule[l_iNextTaskSlot].bSignal == true){
 		            l_pNextTask->run();
@@ -120,6 +124,7 @@ uint8_t Scheduler::setup(void)
     Task * l_pNextTask = (uintptr_t) 0;
     uint8_t l_u8ReturnCode = NO_ERR;
 
+    this->m_u64ticks = INITIAL_VALUE;
     while(l_iNextTaskSlot < NUMBER_OF_SLOTS)
     {
         l_pNextTask = static_cast<Task *> (m_aSchedule[l_iNextTaskSlot].pToAttach);

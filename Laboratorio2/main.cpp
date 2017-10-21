@@ -3,6 +3,8 @@
 #include "Scheduler.hpp"
 #include "Task.hpp"
 #include "LED.hpp"
+#include "LCD.hpp"
+#include "RandomData.hpp"
 
 // ##########################
 // Global/Static declarations
@@ -14,13 +16,15 @@ Scheduler g_MainScheduler; // - Instantiate a Scheduler
 // #########################
 //          MAIN
 // #########################
-void main(void)
+int main(void)
 {
 
     // - Instantiate two new Tasks
     LED BlueLED(BIT2);
     LED GreenLED(BIT1);
     LED RedLED(BIT0);
+    LCD Display;
+    RandomData FakeAccel;
     // - Run the overall setup function for the system
     Setup();
     // - Attach the Tasks to the Scheduler;
@@ -29,6 +33,9 @@ void main(void)
     //g_MainScheduler.attach(&RedLED,false,500);
     g_MainScheduler.attach(&GreenLED,true,NULL);
     g_MainScheduler.attach(&RedLED,true,NULL);
+
+    g_MainScheduler.attach(&FakeAccel,false,100);
+    g_MainScheduler.attach(&Display,true,NULL);
     // - Run the Setup for the scheduler and all tasks
     g_MainScheduler.setup();
     // - Main Loop
@@ -37,16 +44,24 @@ void main(void)
     	__wfe(); // Wait for Event
         if(g_SystemTicks != g_MainScheduler.m_u64ticks)
         {
-            //Trigger Green LED every 300ms
-            if(g_SystemTicks%300==0){
-                GreenLED.SendMessage(0,1);
-            }
-            if(g_SystemTicks%800==0){
-                GreenLED.SendMessage(0,2);
-            }
-            //- Only execute the tasks if one tick has passed.
-            g_MainScheduler.m_u64ticks = g_SystemTicks;
-            g_MainScheduler.run();
+            //if(g_SystemTicks-l_u32PreviousTick == 1) {
+                //Trigger Green LED every 300ms
+                if(g_SystemTicks%300==0){
+                    GreenLED.SendMessage(0,1);
+                }
+                //Trigger Red LED every 800ms
+                if(g_SystemTicks%800==0){
+                    RedLED.SendMessage(0,2);
+                }
+                //- Only execute the tasks if one tick has passed.
+                g_MainScheduler.m_u64ticks = g_SystemTicks;
+                //l_u32PreviousTick = g_SystemTicks;
+                g_MainScheduler.run();
+            //}
+            //else {
+                //volatile int i;
+                //for (i=0;i < 170000000 ; i ++);
+            //}
         }
     }
 }
@@ -63,6 +78,9 @@ void Setup(void)
 	// ****************************
 	// - Disable WDT
 	WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
+
+
+    //MAP_CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
 
 	// ****************************
 	//         PORT CONFIG

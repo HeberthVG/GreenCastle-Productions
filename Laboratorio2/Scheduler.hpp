@@ -14,6 +14,7 @@
 #define NULL                  0
 #define MESAGGES_BUFFER_SPACE 1536
 #define FREE                  0xFFFFFFFF
+#define INITIAL_VALUE         2
 // - This structure defines the Task Information
 struct st_TaskInfo {
 	Task * pToAttach; // - Pointer to the Task
