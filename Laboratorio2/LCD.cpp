@@ -2,25 +2,19 @@
  * LCD.cpp
  *
  *  Created on: Oct 21, 2017
- *      Author: hgvalver
+ *      Author: emanuelhc / hgvalver
  */
 
 #include "LCD.hpp"
 
 LCD::LCD()
 {
-    m_sBlue.xMin = 0;
-    m_sBlue.yMin = 65;
-    m_sBlue.xMax = 127;
-    m_sBlue.yMax = 127;
-    m_sBrown.xMin = 0;
-    m_sBrown.yMin = 0;
-    m_sBrown.xMax = 127;
-    m_sBrown.yMax = 62;
-    m_sWhite.xMin = 0;
-    m_sWhite.yMin = 63;
-    m_sWhite.xMax = 127;
-    m_sWhite.yMax = 64;
+    m_sSky.xMin = PIXEL_MIN;
+    m_sSky.xMax = PIXEL_MAX;
+    m_sSky.yMax = PIXEL_MAX;
+    m_sEarth.xMin = PIXEL_MIN;
+    m_sEarth.yMin = PIXEL_MIN;
+    m_sEarth.xMax = PIXEL_MAX;
 }
 
 uint8_t LCD::run()
@@ -44,19 +38,24 @@ uint8_t LCD::setup()
 
     /* Initializes graphics context */
     Graphics_initContext(&m_sContext, &g_sCrystalfontz128x128);
-    LCD::DrawTitle();
+    //LCD::DrawTitle();
     return(NO_ERR);
 }
 
 uint8_t LCD::DrawTitle()
 {
+    if (m_u32Pixel < 127) {
     Graphics_setForegroundColor(&m_sContext, ClrBlue);
-    Graphics_fillRectangle(&m_sContext, &m_sBlue);
-    Graphics_setForegroundColor(&m_sContext, ClrBrown);
-    Graphics_fillRectangle(&m_sContext, &m_sBrown);
+    Graphics_fillRectangle(&m_sContext, &m_sSky);
+    }
+    if (m_u32Pixel > 0) {
+    Graphics_setForegroundColor(&m_sContext, ClrGreen);
+    Graphics_fillRectangle(&m_sContext, &m_sEarth);
+    }
+    if (m_u32Pixel > PIXEL_MIN and m_u32Pixel < PIXEL_MAX) {
     Graphics_setForegroundColor(&m_sContext, ClrWhite);
-    Graphics_fillRectangle(&m_sContext, &m_sWhite);
-    //Delay();
+    Graphics_drawLine(&m_sContext, PIXEL_MIN, m_u32WhiteLine, PIXEL_MAX, m_u32WhiteLine);
+    }
     return(NO_ERR);
 }
 
@@ -71,11 +70,14 @@ uint8_t LCD::Delay()
 uint8_t LCD::RefreshScreen()
 {
     m_u32Position = *g_pToData;
-    m_u32Pixel  = (m_u32Position-MIN_VALUE)*MAX_NUMBER_PIXEL/(MAX_VALUE-MIN_VALUE);
-    m_sBlue.yMin = m_u32Pixel+WHITE_LINE;
-    m_sBrown.yMax = m_u32Pixel;
-    m_sWhite.yMin = m_u32Pixel+NEXT_PIXEL;
-    m_sWhite.yMax = m_u32Pixel+WHITE_LINE-NEXT_PIXEL;
-    LCD::DrawTitle();
+    m_u32Pixel  = abs(m_u32Position-MIN_VALUE)*PIXEL_MAX/(MAX_VALUE-MIN_VALUE);
+
+    if (abs(m_sEarth.yMax - m_u32Pixel) > NOISE) {
+        m_sSky.yMin = m_u32Pixel+WHITE_LINE;
+        m_sEarth.yMax = m_u32Pixel;
+        m_u32WhiteLine = m_u32Pixel+NEXT_PIXEL;
+
+        LCD::DrawTitle();
+    }
     return(NO_ERR);
 }

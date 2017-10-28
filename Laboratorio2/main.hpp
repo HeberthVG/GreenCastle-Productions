@@ -2,7 +2,7 @@
  * main.hpp
  *
  *  Created on: Aug 31, 2016
- *      Author: eortiz
+ *      Author: emanuelhc / hgvalver
  */
 
 #ifndef MAIN_HPP_

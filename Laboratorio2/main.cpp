@@ -4,7 +4,7 @@
 #include "Task.hpp"
 #include "LED.hpp"
 #include "LCD.hpp"
-#include "RandomData.hpp"
+#include "Accelerometer.hpp"
 
 // ##########################
 // Global/Static declarations
@@ -20,21 +20,20 @@ int main(void)
 {
 
     // - Instantiate two new Tasks
-    LED BlueLED(BIT2);
+    /*LED BlueLED(BIT2);
     LED GreenLED(BIT1);
-    LED RedLED(BIT0);
+    LED RedLED(BIT0);*/
     LCD Display;
-    RandomData FakeAccel;
+    Accelerometer Accel;
     // - Run the overall setup function for the system
     Setup();
     // - Attach the Tasks to the Scheduler;
-    g_MainScheduler.attach(&BlueLED,false,500);
+    //g_MainScheduler.attach(&BlueLED,false,500);
     //g_MainScheduler.attach(&GreenLED,false,500);
     //g_MainScheduler.attach(&RedLED,false,500);
-    g_MainScheduler.attach(&GreenLED,true,NULL);
-    g_MainScheduler.attach(&RedLED,true,NULL);
-
-    g_MainScheduler.attach(&FakeAccel,false,100);
+    //g_MainScheduler.attach(&GreenLED,true,NULL);
+    //g_MainScheduler.attach(&RedLED,true,NULL);
+    g_MainScheduler.attach(&Accel,false,10);
     g_MainScheduler.attach(&Display,true,NULL);
     // - Run the Setup for the scheduler and all tasks
     g_MainScheduler.setup();
@@ -44,24 +43,18 @@ int main(void)
     	__wfe(); // Wait for Event
         if(g_SystemTicks != g_MainScheduler.m_u64ticks)
         {
-            //if(g_SystemTicks-l_u32PreviousTick == 1) {
-                //Trigger Green LED every 300ms
-                if(g_SystemTicks%300==0){
-                    GreenLED.SendMessage(0,1);
-                }
-                //Trigger Red LED every 800ms
-                if(g_SystemTicks%800==0){
-                    RedLED.SendMessage(0,2);
-                }
-                //- Only execute the tasks if one tick has passed.
-                g_MainScheduler.m_u64ticks = g_SystemTicks;
-                //l_u32PreviousTick = g_SystemTicks;
-                g_MainScheduler.run();
-            //}
-            //else {
-                //volatile int i;
-                //for (i=0;i < 170000000 ; i ++);
-            //}
+            //Trigger Green LED every 300ms
+            /*if(g_SystemTicks%300==0){
+                GreenLED.SendMessage(0,1);
+            }
+            //Trigger Red LED every 800ms
+            if(g_SystemTicks%800==0){
+                RedLED.SendMessage(0,2);
+            }*/
+            //- Only execute the tasks if one tick has passed.
+            g_MainScheduler.m_u64ticks = g_SystemTicks;
+            //l_u32PreviousTick = g_SystemTicks;
+            g_MainScheduler.run();
         }
     }
 }
@@ -78,16 +71,6 @@ void Setup(void)
 	// ****************************
 	// - Disable WDT
 	WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
-
-
-    //MAP_CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
-
-	// ****************************
-	//         PORT CONFIG
-	// ****************************
-	// - P1.0 is connected to the Red LED
-	// - This is the heart beat indicator.
-	P1->DIR |= BIT0; //Red LED
 
 	// ****************************
 	//       TIMER CONFIG
@@ -111,7 +94,6 @@ extern "C"
 	void T32_INT1_IRQHandler(void)
 	{
 		TIMER32_1->INTCLR = 0U;
-		P1->OUT ^= BIT0; // - Toggle the heart beat indicator (1ms)
 		g_SystemTicks++;
 		return;
 	}

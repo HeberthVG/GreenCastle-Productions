@@ -7,7 +7,7 @@
 #define RET_ERR                    1
 #define NEXT_POINTER               3
 #define TYPE_TRIGGER_AND_DATA      1
-#define TO_LCD                     4
+#define TO_LCD                     1
 
 uint32_t    *g_pToType, *g_pToID, *g_pToData;
 
