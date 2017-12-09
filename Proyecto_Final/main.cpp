@@ -23,6 +23,16 @@ int main(void)
     // Create an object for LCD and run setup function
     LCD l_Display;
     l_Display.Setup();
+
+    l_Display.CreateEnemy(12);
+    l_Display.CreateEnemy(11);
+
+    while (1) {
+        if (g_SystemTicks == 100) {
+            g_SystemTicks = 0;
+            l_Display.MoveEnemy();
+        }
+    }
 }
 
 // **********************************

@@ -16,6 +16,7 @@
 
 // The main Setup function for the application
 void Setup(void);
+int move_enemy = 0;
 
 
 #endif /* MAIN_HPP_ */
