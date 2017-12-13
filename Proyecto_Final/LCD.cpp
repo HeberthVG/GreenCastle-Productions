@@ -9,12 +9,12 @@
 
 LCD::LCD()
 {
-    SetBlockPosition(&m_sBlock, BORDER_L, NULL, BORDER_L+BLOCK_WIDTH, BLOCK_WIDTH);
-    SetBlockPosition(&m_sPlayer, LD_TIRE, BLOCK, LD_TIRE+BLOCK_WIDTH, BLOCK+BLOCK_WIDTH);
-    m_u8NextEnemy = 0;
+    SetBlockPosition(&m_sBlock, BORDER_L, INITIAL_CAR+BLOCK, BORDER_L+BLOCK_WIDTH, INITIAL_CAR+BLOCK-BLOCK_WIDTH);
+    m_u8NextEnemy = NULL;
     m_i8Enemy1Pos = NULL;
     m_i8Enemy2Pos = NULL;
     m_i8Enemy3Pos = NULL;
+    m_u32GameOver = NULL;
 }
 
 uint8_t LCD::Setup()
@@ -32,23 +32,30 @@ uint8_t LCD::Setup()
 
     /* Initializes graphics context */
     Graphics_initContext(&m_sContext, &g_sCrystalfontz128x128);
-    //Graphics_clearDisplay(&m_sContext);
+    /* Configures graphics context */
+    Graphics_setBackgroundColor(&m_sContext, GRAPHICS_COLOR_WHITE);
+    GrContextFontSet(&m_sContext, &g_sFontFixed6x8);
+    Crystalfontz128x128_SetOrientation(LCD_ORIENTATION_UP);
+    /* Draw Initial Graphics */
     DrawMap();
-    DrawCar(&m_sPlayer, CENTER, BLOCK, ClrBlack);
+    DrawCar(&m_sPlayer, CENTER, INITIAL_CAR, ClrBlack);
+    Graphics_setForegroundColor(&m_sContext, ClrRed);
+    Graphics_drawStringCentered(&m_sContext, (int8_t *)SCORE, GRAPHICS_AUTO_STRING_LENGTH, SCORE_X, TEXT_Y, OPAQUE_TEXT);
+    Graphics_drawStringCentered(&m_sContext, (int8_t *)SPEED, GRAPHICS_AUTO_STRING_LENGTH, SPEED_X, TEXT_Y, OPAQUE_TEXT);
     return(NO_ERR);
 }
 
 uint8_t LCD::OneBlockUp (Graphics_Rectangle *l_pRect)
 {
-    l_pRect->yMin += BLOCK;
-    l_pRect->yMax += BLOCK;
+    l_pRect->yMin -= BLOCK;
+    l_pRect->yMax -= BLOCK;
     return(NO_ERR);
 }
 
 uint8_t LCD::TwoBlocksUp (Graphics_Rectangle *l_pRect)
 {
-    l_pRect->yMin += DOUBLE_BLOCK;
-    l_pRect->yMax += DOUBLE_BLOCK;
+    l_pRect->yMin -= DOUBLE_BLOCK;
+    l_pRect->yMax -= DOUBLE_BLOCK;
     return(NO_ERR);
 }
 
@@ -65,7 +72,7 @@ uint8_t LCD::DrawMap()
 {
     Graphics_setForegroundColor(&m_sContext, ClrBlack);
     DrawBorder();
-    SetBlockPosition(&m_sBlock, BORDER_R, NULL, BORDER_R+BLOCK_WIDTH, BLOCK_WIDTH);
+    SetBlockPosition(&m_sBlock, BORDER_R, INITIAL_CAR+BLOCK, BORDER_R+BLOCK_WIDTH, INITIAL_CAR+BLOCK-BLOCK_WIDTH);
     DrawBorder();
     return(NO_ERR);
 }
@@ -86,52 +93,71 @@ uint8_t LCD::CreateEnemy(uint8_t l_u8Lane)
 {
     m_u8Lane = l_u8Lane;
     // Select the enemy object to use
-    switch (m_u8NextEnemy) {
-    case ENEMY_1:
-        m_pEnemy = &m_sEnemy1;
-        m_i8Enemy1Pos = MAX_POS;
-        m_u8LaneE1 = m_u8Lane;
-        ENEMY_1_IS_ALIVE = true;
-        break;
-    case ENEMY_2:
-        m_pEnemy = &m_sEnemy2;
-        m_i8Enemy2Pos = MAX_POS;
-        m_u8LaneE2 = m_u8Lane;
-        ENEMY_2_IS_ALIVE = true;
-        break;
-    case ENEMY_3:
-        m_pEnemy = &m_sEnemy3;
-        m_i8Enemy3Pos = MAX_POS;
-        m_u8LaneE3 = m_u8Lane;
-        ENEMY_3_IS_ALIVE = true;
-        break;
+    if (!ENEMY_1_IS_ALIVE or !ENEMY_2_IS_ALIVE or !ENEMY_3_IS_ALIVE) {
+        switch (m_u8NextEnemy) {
+        case ENEMY_1:
+            m_pEnemy = &m_sEnemy1;
+            m_i8Enemy1Pos = BLOCK;
+            m_u8LaneE1 = m_u8Lane;
+            ENEMY_1_IS_ALIVE = true;
+            m_u32Color = ENEMY1_CLR;
+            break;
+        case ENEMY_2:
+            m_pEnemy = &m_sEnemy2;
+            m_i8Enemy2Pos = BLOCK;
+            m_u8LaneE2 = m_u8Lane;
+            ENEMY_2_IS_ALIVE = true;
+            m_u32Color = ENEMY2_CLR;
+            break;
+        case ENEMY_3:
+        default:
+            m_pEnemy = &m_sEnemy3;
+            m_i8Enemy3Pos = BLOCK;
+            m_u8LaneE3 = m_u8Lane;
+            ENEMY_3_IS_ALIVE = true;
+            m_u32Color = ENEMY3_CLR;
+        }
+        // Calculate the next enemy object to use
+        m_u8NextEnemy++;
+        if (m_u8NextEnemy > 2)
+            m_u8NextEnemy = 0;
+        DrawCar(m_pEnemy, m_u8Lane, DOUBLE_BLOCK, m_u32Color);
+        return(NO_ERR);
+    } else {
+        return(ERR_ENEMY);
     }
-    // Calculate the next enemy object to use
-    m_u8NextEnemy++;
-    if (m_u8NextEnemy > 2)
-        m_u8NextEnemy = 0;
-    DrawCar(m_pEnemy, m_u8Lane, MAX_POS, ClrCyan);
-    return(NO_ERR);
 }
 
 uint8_t LCD::MoveEnemy()
 {
     if (ENEMY_1_IS_ALIVE) {
         EraseCar(&m_sEnemy1, m_u8LaneE1, m_i8Enemy1Pos);
-        m_i8Enemy1Pos--;
-        if (m_i8Enemy1Pos > -13) {
-            DrawCar(&m_sEnemy1, m_u8LaneE1, m_i8Enemy1Pos, ClrYellow);
+        m_i8Enemy1Pos++;
+        if (m_i8Enemy1Pos < LIMIT_Y) {
+            DrawCar(&m_sEnemy1, m_u8LaneE1, m_i8Enemy1Pos, ENEMY1_CLR);
+            CarCrashed(&m_sEnemy1);
         } else {
             ENEMY_1_IS_ALIVE = false;
         }
     }
     if (ENEMY_2_IS_ALIVE) {
         EraseCar(&m_sEnemy2, m_u8LaneE2, m_i8Enemy2Pos);
-        m_i8Enemy2Pos--;
-        if (m_i8Enemy2Pos > -13) {
-            DrawCar(&m_sEnemy2, m_u8LaneE2, m_i8Enemy2Pos, ClrGreen);
+        m_i8Enemy2Pos++;
+        if (m_i8Enemy2Pos < LIMIT_Y) {
+            DrawCar(&m_sEnemy2, m_u8LaneE2, m_i8Enemy2Pos, ENEMY2_CLR);
+            CarCrashed(&m_sEnemy2);
         } else {
             ENEMY_2_IS_ALIVE = false;
+        }
+    }
+    if (ENEMY_3_IS_ALIVE) {
+        EraseCar(&m_sEnemy3, m_u8LaneE3, m_i8Enemy3Pos);
+        m_i8Enemy3Pos++;
+        if (m_i8Enemy3Pos < LIMIT_Y) {
+            DrawCar(&m_sEnemy3, m_u8LaneE3, m_i8Enemy3Pos, ENEMY3_CLR);
+            CarCrashed(&m_sEnemy3);
+        } else {
+            ENEMY_3_IS_ALIVE = false;
         }
     }
     return(NO_ERR);
@@ -150,7 +176,8 @@ uint8_t LCD::DrawCar(Graphics_Rectangle *l_pRect, uint8_t l_u8Lane, uint8_t l_u8
     default:
         m_u8Lane = LD_TIRE_R;
     }
-    SetBlockPosition(l_pRect, m_u8Lane, l_u8PosY, m_u8Lane+BLOCK_WIDTH, l_u8PosY+BLOCK_WIDTH);
+    Graphics_setForegroundColor(&m_sContext, l_i32Color);
+    SetBlockPosition(l_pRect, m_u8Lane, l_u8PosY, m_u8Lane+BLOCK_WIDTH, l_u8PosY-BLOCK_WIDTH);
     CheckLimitY(l_pRect);
     Graphics_fillRectangle(&m_sContext, l_pRect);
     Graphics_setForegroundColor(&m_sContext, l_i32Color);
@@ -158,7 +185,7 @@ uint8_t LCD::DrawCar(Graphics_Rectangle *l_pRect, uint8_t l_u8Lane, uint8_t l_u8
     CheckLimitY(l_pRect);
     Graphics_fillRectangle(&m_sContext, l_pRect);
     Graphics_setForegroundColor(&m_sContext, l_i32Color);
-    SetBlockPosition(l_pRect, m_u8Lane+DOUBLE_BLOCK, l_u8PosY, m_u8Lane+DOUBLE_BLOCK+BLOCK_WIDTH, l_u8PosY+BLOCK_WIDTH);
+    SetBlockPosition(l_pRect, m_u8Lane+DOUBLE_BLOCK, l_u8PosY, m_u8Lane+DOUBLE_BLOCK+BLOCK_WIDTH, l_u8PosY-BLOCK_WIDTH);
     CheckLimitY(l_pRect);
     Graphics_fillRectangle(&m_sContext, l_pRect);
     Graphics_setForegroundColor(&m_sContext, l_i32Color);
@@ -166,7 +193,7 @@ uint8_t LCD::DrawCar(Graphics_Rectangle *l_pRect, uint8_t l_u8Lane, uint8_t l_u8
     CheckLimitY(l_pRect);
     Graphics_fillRectangle(&m_sContext, l_pRect);
     Graphics_setForegroundColor(&m_sContext, l_i32Color);
-    SetBlockPosition(l_pRect, m_u8Lane+BLOCK, l_u8PosY+BLOCK, m_u8Lane+BLOCK+BLOCK_WIDTH, l_u8PosY+BLOCK+BLOCK_WIDTH);
+    SetBlockPosition(l_pRect, m_u8Lane+BLOCK, l_u8PosY-BLOCK, m_u8Lane+BLOCK+BLOCK_WIDTH, l_u8PosY-BLOCK-BLOCK_WIDTH);
     CheckLimitY(l_pRect);
     Graphics_fillRectangle(&m_sContext, l_pRect);
     Graphics_setForegroundColor(&m_sContext, l_i32Color);
@@ -188,7 +215,45 @@ uint8_t LCD::EraseCar(Graphics_Rectangle *l_pRect, uint8_t l_u8OldPosition, uint
 
 uint8_t LCD::CheckLimitY (Graphics_Rectangle *l_pRect)
 {
-    if ((l_pRect->yMin < BLOCK) or (l_pRect->yMin > MAX_POS))
+    if ((l_pRect->yMin > INITIAL_CAR) or (l_pRect->yMin < DOUBLE_BLOCK))
         Graphics_setForegroundColor(&m_sContext, ClrWhite);
     return(NO_ERR);
+}
+
+uint8_t LCD::RefreshData (uint32_t l_u32Score, uint8_t l_u8Speed)
+{
+    Graphics_setForegroundColor(&m_sContext, ClrGray);
+    sprintf(c_Data, "%5d", l_u32Score);
+    Graphics_drawStringCentered(&m_sContext, (int8_t *) c_Data, GRAPHICS_AUTO_STRING_LENGTH, SCORE_X, VALUE_Y, OPAQUE_TEXT);
+    sprintf(c_Data, "%5d", l_u8Speed);
+    Graphics_drawStringCentered(&m_sContext, (int8_t *) c_Data, GRAPHICS_AUTO_STRING_LENGTH, SPEED_X, VALUE_Y, OPAQUE_TEXT);
+    return(NO_ERR);
+}
+
+uint8_t LCD::CarCrashed (Graphics_Rectangle *l_pRect)
+{
+    if (m_u32GameOver == NULL)
+        m_u32GameOver = IsRectangleOverlap(l_pRect, &m_sPlayer);
+    return(NO_ERR);
+}
+
+bool LCD::IsGameOver ()
+{
+    if (m_u32GameOver == NULL)
+        m_bGameOver = false;
+    else {
+        m_bGameOver = true;
+    }
+    return(m_bGameOver);
+}
+
+int32_t LCD::IsRectangleOverlap(Graphics_Rectangle *rect1, Graphics_Rectangle *rect2)
+{
+    if ((((rect1->xMin <= rect2->xMin) and (rect2->xMin <= rect1->xMax)) or
+         ((rect1->xMin <= rect2->xMax) and (rect2->xMax <= rect1->xMax))) and
+        rect1->yMin==COLISION) {
+        return(1);
+    } else {
+        return(0);
+    }
 }

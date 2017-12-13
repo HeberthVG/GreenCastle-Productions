@@ -7,11 +7,6 @@
 
 #include "main.hpp"
 
-// ##########################
-// Global/Static declarations
-// ##########################
-volatile static uint64_t g_SystemTicks = 0; // - The system counter.
-
 // #########################
 //          MAIN
 // #########################
@@ -20,21 +15,66 @@ int main(void)
     // - Run the overall setup function for the system
     Setup();
 
-    // Create an object for LCD and run setup function
+    // Create an object for LCD
     LCD l_Display;
+    // Create an object for random data
+    RandomData l_Data;
+
+    // Run setup functions
     l_Display.Setup();
+    l_Data.Setup();
 
-    l_Display.CreateEnemy(12);
-    l_Display.CreateEnemy(11);
+    // Enable interruptions
+    __enable_irq();
 
-    while (1) {
-        if (g_SystemTicks == 100) {
+    // Main Loop
+    while (g_bGameOver == false) {
+        // Update the score
+        if (g_SystemTicks>=REFRESH*g_u8Level) {
+            g_bNewEnemy = l_Data.NewEnemy(g_u8Level);
+            g_u32Score++;
             g_SystemTicks = 0;
-            l_Display.MoveEnemy();
         }
+        // Refresh the value of score and speed
+        if (g_SystemTicks%REFRESH==0)
+            l_Display.RefreshData(g_u32Score, g_u8Speed);
+        // Selects the lane of new enemy and creates it
+        if (g_bNewEnemy) {
+            l_Display.CreateEnemy(l_Data.Lane());
+            g_bNewEnemy = false;
+        }
+        // Move the enemies
+        if (g_SystemTicks%g_u8Level==0)
+            l_Display.MoveEnemy();
+        g_bGameOver = l_Display.IsGameOver();
     }
 }
 
+void GetSpeed(void)
+{
+    if(g_bLevelChanged == true) {
+        switch (g_u8Level) {
+        case LVL1:
+            g_u8Speed = 1;
+            break;
+        case LVL2:
+            g_u8Speed = 2;
+            break;
+        case LVL3:
+            g_u8Speed = 3;
+            break;
+        case LVL4:
+            g_u8Speed = 4;
+            break;
+        case LVL5:
+            g_u8Speed = 5;
+            break;
+        default:
+            g_u8Speed = 1;
+        }
+        g_bLevelChanged = false;
+    }
+}
 // **********************************
 // Setup function for the application
 // @input - none
@@ -59,8 +99,14 @@ void Setup(void)
 	TIMER32_1->CONTROL = TIMER32_CONTROL_SIZE | TIMER32_CONTROL_PRESCALE_0 | TIMER32_CONTROL_MODE | TIMER32_CONTROL_IE | TIMER32_CONTROL_ENABLE;
 	NVIC_SetPriority(T32_INT1_IRQn,1);
 	NVIC_EnableIRQ(T32_INT1_IRQn);
-	__enable_irq();
 
+	/* Variables config */
+	g_u32Score = 0;
+	g_u8Level = LVL3;
+	g_bLevelChanged = true;
+	g_bGameOver = false;
+	g_bNewEnemy = false;
+	GetSpeed();
 	return;
 }
 
