@@ -70,6 +70,9 @@ class LCD
         uint8_t RefreshData (uint32_t m_u32Score, uint8_t m_u8Speed);
         uint8_t CarCrashed (Graphics_Rectangle *l_pRect);
         int32_t IsRectangleOverlap(Graphics_Rectangle *rect1, Graphics_Rectangle *rect2);
+        uint8_t ChangeLane(uint8_t l_u8CurrentPosition, uint8_t l_u8Direction);
+        uint8_t ReturnCurrentPosition(void);
+        uint8_t ReturnCurrentScore(void);
         bool IsGameOver (void);
     protected:
     private:
@@ -81,6 +84,8 @@ class LCD
         bool ENEMY_1_IS_ALIVE, ENEMY_2_IS_ALIVE, ENEMY_3_IS_ALIVE;
         uint32_t m_u32GameOver, m_u32Color;
         bool m_bGameOver;
+        uint8_t m_u8CurrentPosition;
+        uint8_t m_u8CurrentScore;
 };
 
 #endif /* LCD_HPP_ */

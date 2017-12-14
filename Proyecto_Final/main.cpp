@@ -6,50 +6,9 @@
  */
 
 #include "main.hpp"
-
-// #########################
-//          MAIN
-// #########################
-int main(void)
-{
-    // - Run the overall setup function for the system
-    Setup();
-
-    // Create an object for LCD
-    LCD l_Display;
-    // Create an object for random data
-    RandomData l_Data;
-
-    // Run setup functions
-    l_Display.Setup();
-    l_Data.Setup();
-
-    // Enable interruptions
-    __enable_irq();
-
-    // Main Loop
-    while (g_bGameOver == false) {
-        // Update the score
-        if (g_SystemTicks>=REFRESH*g_u8Level) {
-            g_bNewEnemy = l_Data.NewEnemy(g_u8Level);
-            g_u32Score++;
-            g_SystemTicks = 0;
-        }
-        // Refresh the value of score and speed
-        if (g_SystemTicks%REFRESH==0)
-            l_Display.RefreshData(g_u32Score, g_u8Speed);
-        // Selects the lane of new enemy and creates it
-        if (g_bNewEnemy) {
-            l_Display.CreateEnemy(l_Data.Lane());
-            g_bNewEnemy = false;
-        }
-        // Move the enemies
-        if (g_SystemTicks%g_u8Level==0)
-            l_Display.MoveEnemy();
-        g_bGameOver = l_Display.IsGameOver();
-    }
-}
-
+//***********************************
+//          Get speed function
+//***********************************
 void GetSpeed(void)
 {
     if(g_bLevelChanged == true) {
@@ -75,6 +34,75 @@ void GetSpeed(void)
         g_bLevelChanged = false;
     }
 }
+
+// #########################
+//          MAIN
+// #########################
+int main(void)
+{
+    // - Run the overall setup function for the system
+    Setup();
+
+    // Create an object for LCD
+    LCD l_Display;
+    // Create an object for random data
+    RandomData l_Data;
+
+    //create an object type accelerometer
+    Accelerometer l_acce;
+
+
+
+    // Run setup functions
+    l_Display.Setup();
+    l_Data.Setup();
+    l_acce.setup();
+    // Enable interruptions
+    __enable_irq();
+
+    // Main Loop
+    while (g_bGameOver == false) {
+        // Update the score
+        if (g_SystemTicks>=REFRESH*g_u8Level) {
+            g_bNewEnemy = l_Data.NewEnemy(g_u8Level);
+            g_u32Score++;
+            g_SystemTicks = 0;
+        }
+        // Refresh the value of score and speed
+        if (g_SystemTicks%REFRESH==0){
+            if(l_Display.ReturnCurrentScore()>=100 and l_Display.ReturnCurrentScore() <200){
+              g_u8Level = LVL4;
+              g_bLevelChanged = true;
+              GetSpeed();
+            }
+            if(l_Display.ReturnCurrentScore()>=200){
+               g_u8Level = LVL5;
+               g_bLevelChanged = true;
+               GetSpeed();
+            }
+            l_Display.RefreshData(g_u32Score, g_u8Speed);
+            //l_u8Direction= l_acce.run();
+            l_u8Direction2= l_acce.run();
+            l_u8Direction= 0;
+            m_u8CurrentPosition= l_Display.ReturnCurrentPosition();
+            l_Display.ChangeLane(m_u8CurrentPosition, l_u8Direction2);
+
+        }// Selects the lane of new enemy and creates it
+        if (g_bNewEnemy) {
+            l_Display.CreateEnemy(l_Data.Lane());
+            g_bNewEnemy = false;
+        }
+        // Move the enemies and player
+        if (g_SystemTicks%g_u8Level==0){
+            l_Display.MoveEnemy();
+
+        }
+        g_bGameOver = l_Display.IsGameOver();
+
+    }
+}
+
+
 // **********************************
 // Setup function for the application
 // @input - none

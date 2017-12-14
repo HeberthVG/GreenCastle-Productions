@@ -11,6 +11,7 @@
 #include "msp.h"
 #include "LCD.hpp"
 #include "RandomData.hpp"
+#include "Accelerometer.hpp"
 
 #define TIMER32_COUNT   0x0000BB80  // ~1ms with 48MHz clock
 #define TIME_UP_ERROR   1
@@ -25,6 +26,9 @@ int move_enemy = 0;
 uint32_t g_u32Score;
 uint8_t g_u8Speed, g_u8Level;
 bool g_bLevelChanged, g_bGameOver, g_bNewEnemy;
+uint8_t l_u8Direction;
+uint8_t m_u8CurrentPosition;
+uint32_t  l_u8Direction2;
 
 // ##########################
 // Global/Static declarations

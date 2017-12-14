@@ -39,6 +39,7 @@ uint8_t LCD::Setup()
     /* Draw Initial Graphics */
     DrawMap();
     DrawCar(&m_sPlayer, CENTER, INITIAL_CAR, ClrBlack);
+    m_u8CurrentPosition=CENTER;
     Graphics_setForegroundColor(&m_sContext, ClrRed);
     Graphics_drawStringCentered(&m_sContext, (int8_t *)SCORE, GRAPHICS_AUTO_STRING_LENGTH, SCORE_X, TEXT_Y, OPAQUE_TEXT);
     Graphics_drawStringCentered(&m_sContext, (int8_t *)SPEED, GRAPHICS_AUTO_STRING_LENGTH, SPEED_X, TEXT_Y, OPAQUE_TEXT);
@@ -225,6 +226,8 @@ uint8_t LCD::RefreshData (uint32_t l_u32Score, uint8_t l_u8Speed)
     Graphics_setForegroundColor(&m_sContext, ClrGray);
     sprintf(c_Data, "%5d", l_u32Score);
     Graphics_drawStringCentered(&m_sContext, (int8_t *) c_Data, GRAPHICS_AUTO_STRING_LENGTH, SCORE_X, VALUE_Y, OPAQUE_TEXT);
+    m_u8CurrentScore = l_u32Score;
+    //sprintf(c_Data, "%5d", l_u8Speed);
     sprintf(c_Data, "%5d", l_u8Speed);
     Graphics_drawStringCentered(&m_sContext, (int8_t *) c_Data, GRAPHICS_AUTO_STRING_LENGTH, SPEED_X, VALUE_Y, OPAQUE_TEXT);
     return(NO_ERR);
@@ -256,4 +259,79 @@ int32_t LCD::IsRectangleOverlap(Graphics_Rectangle *rect1, Graphics_Rectangle *r
     } else {
         return(0);
     }
+}
+
+uint8_t LCD::ChangeLane(uint8_t l_u8CurrentPosition, uint8_t l_u8Direction)
+{
+    switch (l_u8Direction){
+      case 1:
+          if(l_u8CurrentPosition==CENTER){
+              LCD::EraseCar(&m_sPlayer, CENTER, INITIAL_CAR);
+              LCD::DrawCar(&m_sPlayer, RIGHT, INITIAL_CAR, ClrBlack);
+              //LCD::DrawPlayer(RIGHT);
+              m_u8CurrentPosition=RIGHT;
+          }
+          else{
+              LCD::EraseCar(&m_sPlayer, LEFT, INITIAL_CAR);
+              //LCD::EraseCar(LEFT);
+             //*
+              LCD::DrawCar(&m_sPlayer, RIGHT, INITIAL_CAR, ClrBlack);
+              //LCD::DrawPlayer(CENTER);
+              m_u8CurrentPosition=CENTER;
+          }
+          break;
+      case 2:
+          //LCD::EraseCar(CENTER);
+          //LCD::EraseCar(LEFT);
+          LCD::EraseCar(&m_sPlayer, CENTER, INITIAL_CAR);
+          LCD::EraseCar(&m_sPlayer, LEFT, INITIAL_CAR);
+          //LCD::DrawPlayer(RIGHT);
+          LCD::DrawCar(&m_sPlayer, RIGHT, INITIAL_CAR, ClrBlack);
+          m_u8CurrentPosition=RIGHT;
+          break;
+      case 3:
+          if(l_u8CurrentPosition==CENTER){
+              //LCD::EraseCar(CENTER);
+              LCD::EraseCar(&m_sPlayer, CENTER, INITIAL_CAR);
+              //LCD::DrawPlayer(LEFT);
+              LCD::DrawCar(&m_sPlayer, LEFT, INITIAL_CAR, ClrBlack);
+              m_u8CurrentPosition=LEFT;
+          }
+          else{
+              LCD::EraseCar(&m_sPlayer, RIGHT, INITIAL_CAR);
+              //LCD::EraseCar(RIGHT);
+              //LCD::DrawPlayer(CENTER);
+              //*
+              LCD::DrawCar(&m_sPlayer, LEFT, INITIAL_CAR, ClrBlack);
+              m_u8CurrentPosition=CENTER;
+          }
+          break;
+      case 4:
+          //LCD::EraseCar(RIGHT);
+          //LCD::EraseCar(CENTER);
+          LCD::EraseCar(&m_sPlayer, RIGHT, INITIAL_CAR);
+          LCD::EraseCar(&m_sPlayer, CENTER, INITIAL_CAR);
+         // LCD::DrawPlayer(LEFT);
+          LCD::DrawCar(&m_sPlayer, LEFT, INITIAL_CAR, ClrBlack);
+          m_u8CurrentPosition=LEFT;
+          break;
+      case 5:
+                //LCD::DrawPlayer(CENTER);
+          LCD::EraseCar(&m_sPlayer, RIGHT, INITIAL_CAR);
+          LCD::EraseCar(&m_sPlayer, LEFT, INITIAL_CAR);
+          LCD::DrawCar(&m_sPlayer, CENTER, INITIAL_CAR, ClrBlack);
+                break;
+      default:
+          //LCD::DrawPlayer(CENTER);
+          LCD::DrawCar(&m_sPlayer, m_u8CurrentPosition, INITIAL_CAR, ClrBlack);
+         // m_u8CurrentPosition=CENTER;
+        }
+}
+uint8_t LCD::ReturnCurrentPosition()
+{
+return m_u8CurrentPosition;
+}
+uint8_t LCD::ReturnCurrentScore()
+{
+return m_u8CurrentScore;
 }
